@@ -30,6 +30,7 @@ To sign in to **GitHub, Vercel, Supabase, and Firebase**, use `agsdev@alliancegl
 | Vercel | Team **AGS** (`agsone`) → project **`agsone`** (renamed from `employegames`) | agsdev |
 | Supabase | Org **AGS Dev** → project **AGS One**, ref `qtugwwotqnznpnttzvhl`, region `ap-southeast-2` | agsdev |
 | Firebase / GCP | Project **`ags-one-82a7b`** | agsdev |
+| Cloudinary | Cloud **`cdnl9dwe`** (agsdev's own Cloudinary account; AGS One assets were moved in from the old cloud `dfrmh2iee`) | agsdev |
 
 ### 1.1 Handover status (2026-10-14)
 
@@ -40,8 +41,16 @@ To sign in to **GitHub, Vercel, Supabase, and Firebase**, use `agsdev@alliancegl
 - [x] Vercel env vars `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` now point to `qtugwwotqnznpnttzvhl` (Production and Preview). The two `NEXT_PUBLIC_` values are stored as *Config*, because Vercel won't store browser-exposed values as *Secret*.
 - [ ] **Resume the Vercel project** (it is paused, and the site returns `503 DEPLOYMENT_PAUSED`). Before letting users in, check that the newest production deployment is **Ready** and is the one serving `agsone.space`. Older deployments were built with the **old** database values. Then run the checks in 1.2.
 - [ ] Once the checks pass, **pause** the old Supabase project `fqmrnvjjkotusiymrqum` (old org **AGS**) so nothing can still write to it. **Delete** it after a week; until then it still holds a full copy of employee data.
-- [ ] Confirm the agsdev account owns or has admin on **Cloudinary, Groq, GIPHY**, and the **email sender mailbox** (rows 7–10 below)
-- [ ] Rotate the secrets in 1.3
+- [x] Cloudinary **moved** into agsdev's existing cloud `cdnl9dwe` (see 2.4, "Moving to a different Cloudinary cloud"). All 349 assets were copied byte-for-byte with the same `public_id`s. The 218 database rows holding URLs were rewritten, and the three `*CLOUDINARY*` env vars were swapped in Vercel (Production and Preview). PDF/ZIP delivery is enabled on the new cloud, which the HR document needs.
+- [ ] **Redeploy production** when resuming the Vercel project. `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` is baked in at build time, so a build made before the swap would still sign uploads for the old cloud.
+- [ ] Generate a fresh Cloudinary API key for AGS One, set `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` in Vercel, then delete the key used for the migration. That key was shared in a chat session.
+- [ ] After a week, delete the old Cloudinary account (cloud `dfrmh2iee`)
+- [x] GIPHY key swapped to agsdev's own GIPHY app in Production, Preview, and Development. It takes effect in production on the next redeploy. Delete the previous developer's key (`PXLe…PbVy`) afterwards.
+- [ ] Apply for a GIPHY **production** key (the new key is a rate-limited beta key)
+- [x] Groq key swapped to agsdev's Groq account in Production, Preview, and Development
+- [ ] **Merge PR #18** (Ally's model `llama-3.1-8b-instant` was retired by Groq, so Ally is broken until this ships), then redeploy production
+- [x] Email sender moved from the previous developer's personal mailbox (`d.reyes@`) to `agsdev@` (Gmail App Password `AGS One SMTP`), in Production, Preview, and Development. A test email through `lib/email/mailer.ts` was accepted by Gmail. Revoke the old App Password on `d.reyes@`.
+- [ ] Rotate the secrets in 1.3. This includes the new Cloudinary key, Groq key, and Gmail App Password, which were shared in a chat session during the handover. Regenerate each one and set it in Vercel directly.
 - [ ] Make the GitHub repo **private** (it is still public)
 - [ ] Update the hardcoded values in 1.5 if HR contacts change
 - [ ] Each developer points their clone at the new remote: `git remote set-url origin https://github.com/agsdev-code/agsone.git`
@@ -58,10 +67,10 @@ Each service is a separate account. Three (rows 13–15) are not configured in p
 | 4 | Other domains in the AGS Vercel team | Not attached to this project | `agsone.com`, `agsone.com.ph`, `agsattendancehub.ph`, all at **third-party registrars** | Check | Find out which registrar account holds each one. |
 | 5 | **Supabase project** | Postgres database (all app data), file storage bucket `policy-docs` (HR policy PDFs), Realtime broadcast | Org **AGS Dev** → **AGS One** (`qtugwwotqnznpnttzvhl`), `ap-southeast-2` (Sydney). Pooler host `aws-0-ap-southeast-2.pooler.supabase.com`: port 6543 for the app, 5432 for migrations. | Yes | This is the **only** database; dev and production share it. Old project `fqmrnvjjkotusiymrqum` (org **AGS**) is to be deleted after cutover. The same org also contains an unrelated project, *AGS Break Tracker*. |
 | 6 | **Firebase project** (Google Cloud) | Authentication (Google sign-in), Admin SDK service account for verifying ID tokens | Project ID **`ags-one-82a7b`** | Yes | Owned by agsdev. Also check that the GCP billing account, if one is linked, belongs to the company. |
-| 7 | **Cloudinary** | Image/video uploads (avatars, feed media, reward art, food photos, org-chart photos, document previews) | Cloud name **`dfrmh2iee`**, folder `ags-one/` | Yes | Settings → Users → invite the new owner as *Master admin*, or change the account's login email. |
-| 8 | **Groq** | LLM for the "Ally" HR policy assistant (`app/api/assistant/chat`) | API key in `GROQ_API_KEY` | Yes (assistant breaks without it) | Create a key under the new owner's Groq account and swap the env var. |
-| 9 | **GIPHY** | GIF search in feed comments (browser-side calls) | Public key in `NEXT_PUBLIC_GIPHY_API_KEY` | Yes (GIF picker breaks without it) | Create an app under the new owner's GIPHY developer account and swap the key. |
-| 10 | **Gmail SMTP mailbox** | Outbound notification emails (`lib/email/mailer.ts`) | Sends via `smtp.gmail.com:587` as a **personal** `@allianceglobalsolutions.com` mailbox using an App Password | Yes (emails silently stop without it) | Move to a shared/service mailbox (e.g. `noreply@` or `agsone@`). Generate an App Password on it, then update `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`. |
+| 7 | **Cloudinary** | Image/video uploads (avatars, feed media, reward art, food photos, org-chart photos, document previews) | Cloud name **`cdnl9dwe`** in agsdev's account (shared with Cloudinary's sample assets) | Yes | The database stores **full delivery URLs** that include the cloud name, so changing clouds means copying assets and rewriting URLs (see 2.4). *Settings → Security → Allow delivery of PDF and ZIP files* must stay enabled. |
+| 8 | **Groq** | LLM for the "Ally" HR policy assistant (`app/api/assistant/chat`) | API key in `GROQ_API_KEY`, from agsdev's Groq account (set 2026-10-14). Model: `openai/gpt-oss-20b`, hardcoded in `lib/groq/client.ts`. | Yes (assistant breaks without it) | Groq retires models periodically: `llama-3.1-8b-instant` was retired and broke Ally until PR #18. If Ally fails with `model_not_found`, pick a current **production** model from the Groq console and change the one line in `lib/groq/client.ts`. |
+| 9 | **GIPHY** | GIF search in feed comments (browser-side calls) | Public key in `NEXT_PUBLIC_GIPHY_API_KEY`, from an **API**-type app (not SDK) in agsdev's GIPHY developer account (key `sJNo…Qaa7`, set 2026-10-14) | Yes (GIF picker breaks without it) | New keys start as rate-limited **beta** keys. Use *Upgrade to Production* in the GIPHY dashboard for higher limits. Comments store only `gifId`, so swapping keys needs no database change. |
+| 10 | **Gmail SMTP mailbox** | Outbound notification emails (`lib/email/mailer.ts`) | Sends via `smtp.gmail.com:587` as **`agsdev@allianceglobalsolutions.com`** using a Gmail App Password (requires 2-Step Verification on agsdev@) | Yes (emails silently stop without it) | Sends are fire-and-forget, so a broken login fails **silently**. If HR stops getting notification emails, check the App Password first (myaccount.google.com/apppasswords on agsdev@). Changing agsdev@'s Google password revokes every App Password. |
 | 11 | **Web Push VAPID keypair** | Browser push notifications (`lib/push/send.ts`) | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Yes | Hand over the existing keypair as-is. **Do not regenerate** it, because new keys invalidate every existing push subscription. Update `VAPID_SUBJECT` to the new owner's contact email. |
 | 12 | **Google Workspace** (`allianceglobalsolutions.com`) | Sign-in is restricted to this domain (`hd` param in `lib/firebase/client.ts`); Email HR opens Gmail compose | Company IT | Yes | No transfer needed, but company IT should know the app depends on it. |
 | 13 | OpenAI | Feed content moderation ("Alexa", `lib/guardrails/moderation.ts`) | `OPENAI_API_KEY`, **not set in production** | Optional | Fails open: without a key, posts are published unmoderated. Add a key from the new owner's account to enable moderation. |
@@ -98,7 +107,11 @@ Do **not** rotate the VAPID keys (see 1.2 #11). The Firebase web API key (`NEXT_
 
 ### 1.4 Environment variables (complete list)
 
-Production values live in **Vercel → `agsone` → Settings → Environment Variables** (Production + Preview). Locally they go in `.env.local`, which is gitignored. Prisma CLI commands also read `.env` (it only needs `DATABASE_URL` and `DIRECT_URL`). To pull the current values: `vercel link --project agsone --scope agsone && vercel env pull .env.local`.
+Values live in **Vercel → `agsone` → Settings → Environment Variables**.
+- **Production and Preview** hold the deployed values. Secrets are stored as the *Secret* type, which can't be read back.
+- **Development** holds a complete working local set: the same services, with `NEXT_PUBLIC_APP_URL=http://localhost:3010`.
+
+To set up locally, run `vercel link --project agsone --scope agsone && vercel env pull .env.local`, then copy `DATABASE_URL` and `DIRECT_URL` into `.env`, which Prisma CLI commands read. Both files are gitignored. Development leaves out the unused variables listed below, and `UPSTASH_*`, which is optional and falls back to in-memory limits.
 
 | Variable | Status | Used by | Notes |
 |----------|--------|---------|-------|
@@ -116,7 +129,7 @@ Production values live in **Vercel → `agsone` → Settings → Environment Var
 | `FIREBASE_PROJECT_ID` | **Required** | `lib/firebase/admin.ts` | |
 | `FIREBASE_CLIENT_EMAIL` | **Required** | 〃 | Service-account email |
 | `FIREBASE_PRIVATE_KEY` | **Required** | 〃 | Service-account private key; `\n` escapes are converted at runtime |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | **Required** | `lib/cloudinary/*`, image URLs | `dfrmh2iee` |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | **Required** | `lib/cloudinary/*`, image URLs | `cdnl9dwe`. Inlined at build time, so redeploy after changing it. |
 | `CLOUDINARY_API_KEY` | **Required** | Server-side signed uploads/deletes | |
 | `CLOUDINARY_API_SECRET` | **Required** | 〃 | **Secret** |
 | `GROQ_API_KEY` | **Required** | `lib/groq/client.ts` (Ally assistant) | |
@@ -253,6 +266,25 @@ psql --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql \
 6. **Verify.** Compare per-table row counts with the dump, and call `match_document_chunks('leave policy', 8)` to confirm Ally's search works. Then swap the five Supabase env vars in Vercel (1.1).
 
 Nothing in code needs to change when the Supabase project changes: the CSP and image config in `next.config.ts` allow any `*.supabase.co` host.
+
+**Moving to a different Cloudinary cloud** (done 2026-10-14, `dfrmh2iee` → `cdnl9dwe`). Uploads store the full `secure_url`, cloud name included, in the database. Org-chart overrides store only `User.orgChartPhotoPublicId`, and their URL is built from the env var at render time.
+
+1. List every asset on the old cloud with the Admin API (`resources/image|video|raw`).
+2. Upload each one to the new cloud by URL, with the same `public_id`, `overwrite=false`, and the same `resource_type`. Copy every asset, not just referenced ones.
+3. In one transaction, `replace()` `res.cloudinary.com/<old>/` with `res.cloudinary.com/<new>/` in these columns:
+   - `FoodListing.imageUrls`
+   - `SocialPost.imageUrls`
+   - `SocialPost.videoUrl`
+   - `Reward.imageUrls`
+   - `MedicineItem.imageUrl`
+   - `HrDocument.fileUrl`
+   - `AuditLog.beforeState`
+4. Swap `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in Vercel, then redeploy.
+
+Notes:
+- The `/v<version>/` segment and the transforms baked into stored URLs keep working on the new cloud.
+- New Cloudinary accounts block PDF delivery (`401`) until *Allow delivery of PDF and ZIP files* is enabled.
+- Avatars are Google profile photos, not Cloudinary, so they're unaffected.
 
 ### 2.5 Deployment
 
