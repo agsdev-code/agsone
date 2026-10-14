@@ -45,7 +45,9 @@ To sign in to **GitHub, Vercel, Supabase, and Firebase**, use `agsdev@alliancegl
 - [ ] **Redeploy production** when resuming the Vercel project. `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` is baked in at build time, so a build made before the swap would still sign uploads for the old cloud.
 - [ ] Generate a fresh Cloudinary API key for AGS One, set `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` in Vercel, then delete the key used for the migration. That key was shared in a chat session.
 - [ ] After a week, delete the old Cloudinary account (cloud `dfrmh2iee`)
-- [ ] Confirm the agsdev account owns or has admin on **Groq, GIPHY**, and the **email sender mailbox** (rows 8–10 below)
+- [x] GIPHY key swapped to agsdev's own GIPHY app in Production, Preview, and Development. It takes effect in production on the next redeploy. Delete the previous developer's key (`PXLe…PbVy`) afterwards.
+- [ ] Apply for a GIPHY **production** key (the new key is a rate-limited beta key)
+- [ ] Confirm the agsdev account owns or has admin on **Groq** and the **email sender mailbox** (rows 8 and 10 below)
 - [ ] Rotate the secrets in 1.3
 - [ ] Make the GitHub repo **private** (it is still public)
 - [ ] Update the hardcoded values in 1.5 if HR contacts change
@@ -65,7 +67,7 @@ Each service is a separate account. Three (rows 13–15) are not configured in p
 | 6 | **Firebase project** (Google Cloud) | Authentication (Google sign-in), Admin SDK service account for verifying ID tokens | Project ID **`ags-one-82a7b`** | Yes | Owned by agsdev. Also check that the GCP billing account, if one is linked, belongs to the company. |
 | 7 | **Cloudinary** | Image/video uploads (avatars, feed media, reward art, food photos, org-chart photos, document previews) | Cloud name **`cdnl9dwe`** in agsdev's account (shared with Cloudinary's sample assets) | Yes | The database stores **full delivery URLs** that include the cloud name, so changing clouds means copying assets and rewriting URLs (see 2.4). *Settings → Security → Allow delivery of PDF and ZIP files* must stay enabled. |
 | 8 | **Groq** | LLM for the "Ally" HR policy assistant (`app/api/assistant/chat`) | API key in `GROQ_API_KEY` | Yes (assistant breaks without it) | Create a key under the new owner's Groq account and swap the env var. |
-| 9 | **GIPHY** | GIF search in feed comments (browser-side calls) | Public key in `NEXT_PUBLIC_GIPHY_API_KEY` | Yes (GIF picker breaks without it) | Create an app under the new owner's GIPHY developer account and swap the key. |
+| 9 | **GIPHY** | GIF search in feed comments (browser-side calls) | Public key in `NEXT_PUBLIC_GIPHY_API_KEY`, from an **API**-type app (not SDK) in agsdev's GIPHY developer account (key `sJNo…Qaa7`, set 2026-10-14) | Yes (GIF picker breaks without it) | New keys start as rate-limited **beta** keys. Use *Upgrade to Production* in the GIPHY dashboard for higher limits. Comments store only `gifId`, so swapping keys needs no database change. |
 | 10 | **Gmail SMTP mailbox** | Outbound notification emails (`lib/email/mailer.ts`) | Sends via `smtp.gmail.com:587` as a **personal** `@allianceglobalsolutions.com` mailbox using an App Password | Yes (emails silently stop without it) | Move to a shared/service mailbox (e.g. `noreply@` or `agsone@`). Generate an App Password on it, then update `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`. |
 | 11 | **Web Push VAPID keypair** | Browser push notifications (`lib/push/send.ts`) | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Yes | Hand over the existing keypair as-is. **Do not regenerate** it, because new keys invalidate every existing push subscription. Update `VAPID_SUBJECT` to the new owner's contact email. |
 | 12 | **Google Workspace** (`allianceglobalsolutions.com`) | Sign-in is restricted to this domain (`hd` param in `lib/firebase/client.ts`); Email HR opens Gmail compose | Company IT | Yes | No transfer needed, but company IT should know the app depends on it. |
