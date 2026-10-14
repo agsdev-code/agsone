@@ -34,24 +34,29 @@ To sign in to **GitHub, Vercel, Supabase, and Firebase**, use `agsdev@alliancegl
 
 ### 1.1 Handover status (2026-10-14)
 
+**Done.** Production runs entirely on agsdev-owned accounts. It was verified after the final redeploy: sign-in, image upload, GIF search, Ally, and email all work.
+
 - [x] GitHub repository transferred to agsdev (`agsdev-code/agsone`)
 - [x] Vercel team **AGS** and project `agsone` transferred to agsdev
 - [x] Firebase project `ags-one-82a7b` transferred to agsdev
-- [x] Supabase **copied** into a new project owned by agsdev (see 2.4, "Copying to a new Supabase project"). The copy was a fresh project rather than a transfer, so its usage and billing history start clean. All 36 data tables and 9 `policy-docs` files were copied and verified.
-- [x] Vercel env vars `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` now point to `qtugwwotqnznpnttzvhl` (Production and Preview). The two `NEXT_PUBLIC_` values are stored as *Config*, because Vercel won't store browser-exposed values as *Secret*.
-- [ ] **Resume the Vercel project** (it is paused, and the site returns `503 DEPLOYMENT_PAUSED`). Before letting users in, check that the newest production deployment is **Ready** and is the one serving `agsone.space`. Older deployments were built with the **old** database values. Then run the checks in 1.2.
-- [ ] Once the checks pass, **pause** the old Supabase project `fqmrnvjjkotusiymrqum` (old org **AGS**) so nothing can still write to it. **Delete** it after a week; until then it still holds a full copy of employee data.
-- [x] Cloudinary **moved** into agsdev's existing cloud `cdnl9dwe` (see 2.4, "Moving to a different Cloudinary cloud"). All 349 assets were copied byte-for-byte with the same `public_id`s. The 218 database rows holding URLs were rewritten, and the three `*CLOUDINARY*` env vars were swapped in Vercel (Production and Preview). PDF/ZIP delivery is enabled on the new cloud, which the HR document needs.
-- [ ] **Redeploy production** when resuming the Vercel project. `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` is baked in at build time, so a build made before the swap would still sign uploads for the old cloud.
-- [ ] Generate a fresh Cloudinary API key for AGS One, set `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` in Vercel, then delete the key used for the migration. That key was shared in a chat session.
-- [ ] After a week, delete the old Cloudinary account (cloud `dfrmh2iee`)
-- [x] GIPHY key swapped to agsdev's own GIPHY app in Production, Preview, and Development. It takes effect in production on the next redeploy. Delete the previous developer's key (`PXLe…PbVy`) afterwards.
-- [ ] Apply for a GIPHY **production** key (the new key is a rate-limited beta key)
-- [x] Groq key swapped to agsdev's Groq account in Production, Preview, and Development
-- [ ] **Merge PR #18** (Ally's model `llama-3.1-8b-instant` was retired by Groq, so Ally is broken until this ships), then redeploy production
-- [x] Email sender moved from the previous developer's personal mailbox (`d.reyes@`) to `agsdev@` (Gmail App Password `AGS One SMTP`), in Production, Preview, and Development. A test email through `lib/email/mailer.ts` was accepted by Gmail. Revoke the old App Password on `d.reyes@`.
-- [ ] Rotate the secrets in 1.3. This includes the new Cloudinary key, Groq key, and Gmail App Password, which were shared in a chat session during the handover. Regenerate each one and set it in Vercel directly.
-- [ ] Make the GitHub repo **private** (it is still public)
+- [x] Supabase **copied** into a new project owned by agsdev, `qtugwwotqnznpnttzvhl` (see 2.4, "Copying to a new Supabase project"). The copy was a fresh project rather than a transfer, so its usage and billing history start clean. All 36 data tables and 9 `policy-docs` files were copied and verified.
+- [x] Cloudinary **moved** into agsdev's existing cloud `cdnl9dwe` (see 2.4, "Moving to a different Cloudinary cloud"). All 349 assets were copied byte-for-byte with the same `public_id`s, and the 218 database rows holding URLs were rewritten. PDF/ZIP delivery is enabled on the new cloud.
+- [x] GIPHY key moved to agsdev's GIPHY app (API type)
+- [x] Groq key moved to agsdev's Groq account. Ally switched to `openai/gpt-oss-20b` after Groq retired `llama-3.1-8b-instant` (PR #18).
+- [x] Email sender moved from the previous developer's personal mailbox (`d.reyes@`) to `agsdev@` (Gmail App Password `AGS One SMTP`)
+- [x] All of the above set in Vercel **Production, Preview, and Development**. The two `NEXT_PUBLIC_SUPABASE_*` values, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, and `NEXT_PUBLIC_GIPHY_API_KEY` are stored as *Config*, because Vercel won't store browser-exposed values as *Secret*.
+- [x] Production redeployed from `main` (`4cefeba`) and verified on `agsone.space`
+
+**Still to do** (agsdev unless noted):
+
+- [ ] **Make the GitHub repo private** (Settings → General → Danger Zone; only `agsdev-code` has admin)
+- [ ] **Rotate the credentials shared during the handover.** The Cloudinary API key/secret, Groq key, and Gmail App Password were pasted in a chat session. Regenerate each one and set it in Vercel directly (Production, Preview, Development), then redeploy. See 1.3 for the rest.
+- [ ] **Pause, then delete, the old Supabase project** `fqmrnvjjkotusiymrqum` (old org **AGS**). Until it's deleted it still holds a full copy of employee data. *(previous developer)*
+- [ ] **Delete the old Cloudinary account** (cloud `dfrmh2iee`) after about a week. Every asset is already in `cdnl9dwe`. *(previous developer)*
+- [ ] **Revoke the previous developer's old credentials:** the Gmail App Password on `d.reyes@`, the GIPHY key `PXLe…PbVy`, and the Groq key `gsk_Wnro…` *(previous developer)*
+- [ ] **Remove the previous developer's access:** GitHub collaborators `Ditherys` and `dreyes-netizen`, Vercel team member `reyesditherb-9328`, and `d.reyes@` in Firebase/GCP IAM. First confirm `agsdev@` is **Owner** in IAM.
+- [ ] **Review other access:** GitHub collaborator `vtion001` (write) and Vercel viewer `patrick@allianceglobalsolutions.com`
+- [ ] Apply for a GIPHY **production** key. The current key is a rate-limited beta key.
 - [ ] Update the hardcoded values in 1.5 if HR contacts change
 - [ ] Each developer points their clone at the new remote: `git remote set-url origin https://github.com/agsdev-code/agsone.git`
 
