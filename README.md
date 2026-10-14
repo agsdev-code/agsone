@@ -7,25 +7,57 @@ Internal employee engagement and rewards platform for **Alliance Global Solution
 
 This README has two parts:
 
-1. **[Ownership handover](#1-ownership-handover)**: every account, credential, domain, and hardcoded value a new owner needs to take over.
+1. **[Ownership handover](#1-ownership-handover)**: the owner account, every service the app depends on, credentials, and hardcoded values.
 2. **[Developer guide](#2-developer-guide)**: how to run, build, migrate, and deploy the app.
 
 ---
 
 ## 1. Ownership handover
 
-### 1.1 Asset inventory: everything that must be transferred
+### 1.0 Owner account
 
-The app depends on the services below. Each one is a separate account that needs a new owner (or a new admin added and the old one removed). Two services are not configured in production yet; you can skip them unless you want to enable them.
+All accounts are owned by the shared company account **`agsdev@allianceglobalsolutions.com`**. The original developer (Dither Reyes, `d.reyes@`) handed it over in October 2026.
 
-| # | Service | What it's used for | Current location / identifier | Required? | How to transfer |
-|---|---------|--------------------|-------------------------------|-----------|-----------------|
-| 1 | **GitHub repository** | Source code, PRs | `github.com/dreyes-netizen/agsone` (personal account, **public** repo) | Yes | Settings → Danger Zone → *Transfer ownership* to the company org or new owner. Consider making it **private** (it's an internal HR tool). |
-| 2 | **Vercel project** | Hosting, builds, env vars, preview deployments | Team **AGS** (`agsone`) → project **`employegames`**, region `syd1` | Yes | Invite the new owner to the *AGS* team as **Owner**, then remove the old member. After the GitHub transfer, reconnect Git (Project → Settings → Git) so the Vercel GitHub app can see the repo under its new owner. |
-| 3 | **Domain `agsone.space`** | Production URL | Registered **through Vercel** inside the AGS team; expires **22 Aug 2027** | Yes | Transfers with the Vercel team. Make sure auto-renew and the team's billing card belong to the new owner. |
-| 4 | Other domains in the AGS Vercel team | Not attached to this project | `agsone.com`, `agsone.com.ph`, `agsattendancehub.ph`, all at **third-party registrars** | Check | Find out which registrar account holds each and transfer those registrar logins too. |
-| 5 | **Supabase project** | Postgres database (all app data), file storage bucket `policy-docs` (HR policy PDFs), Realtime broadcast | Region `ap-southeast-2` (Sydney), pooled connection on port 6543 / direct on 5432 | Yes | Supabase org → *Members* → invite the new owner as **Owner**, or *Transfer project* to an org they own. Note: this is the **only** database; dev and production share it. |
-| 6 | **Firebase project** (Google Cloud) | Authentication (Google sign-in), Admin SDK service account for verifying ID tokens | Project ID **`ags-one-82a7b`** | Yes | Firebase console → Project settings → *Users and permissions* → add the new owner as **Owner** (this is a Google Cloud IAM role). Also transfer the GCP billing account if one is linked. |
+To sign in to **GitHub, Vercel, Supabase, and Firebase**, use `agsdev@allianceglobalsolutions.com`:
+
+1. Try **Continue with GitHub** first, using the GitHub account registered to `agsdev@`.
+2. If that doesn't work, use **Continue with Google** with the same `agsdev@` Google Workspace account.
+3. Firebase is part of Google Cloud, so it always uses **Google** sign-in with `agsdev@`.
+
+| Service | Where | Owner |
+|---------|-------|-------|
+| GitHub | `github.com/agsdev-code/agsone` (moved from `github.com/dreyes-netizen/agsone`, which no longer resolves) | agsdev |
+| Vercel | Team **AGS** (`agsone`) → project **`agsone`** (renamed from `employegames`) | agsdev |
+| Supabase | Org **AGS Dev** → project **AGS One**, ref `qtugwwotqnznpnttzvhl`, region `ap-southeast-2` | agsdev |
+| Firebase / GCP | Project **`ags-one-82a7b`** | agsdev |
+
+### 1.1 Handover status (2026-10-14)
+
+- [x] GitHub repository transferred to agsdev (`agsdev-code/agsone`)
+- [x] Vercel team **AGS** and project `agsone` transferred to agsdev
+- [x] Firebase project `ags-one-82a7b` transferred to agsdev
+- [x] Supabase **copied** into a new project owned by agsdev (see 2.4, "Copying to a new Supabase project"). The copy was a fresh project rather than a transfer, so its usage and billing history start clean. All 36 data tables and 9 `policy-docs` files were copied and verified.
+- [x] Vercel env vars `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` now point to `qtugwwotqnznpnttzvhl` (Production and Preview). The two `NEXT_PUBLIC_` values are stored as *Config*, because Vercel won't store browser-exposed values as *Secret*.
+- [ ] **Resume the Vercel project** (it is paused, and the site returns `503 DEPLOYMENT_PAUSED`). Before letting users in, check that the newest production deployment is **Ready** and is the one serving `agsone.space`. Older deployments were built with the **old** database values. Then run the checks in 1.2.
+- [ ] Once the checks pass, **pause** the old Supabase project `fqmrnvjjkotusiymrqum` (old org **AGS**) so nothing can still write to it. **Delete** it after a week; until then it still holds a full copy of employee data.
+- [ ] Confirm the agsdev account owns or has admin on **Cloudinary, Groq, GIPHY**, and the **email sender mailbox** (rows 7–10 below)
+- [ ] Rotate the secrets in 1.3
+- [ ] Make the GitHub repo **private** (it is still public)
+- [ ] Update the hardcoded values in 1.5 if HR contacts change
+- [ ] Each developer points their clone at the new remote: `git remote set-url origin https://github.com/agsdev-code/agsone.git`
+
+### 1.2 Services the app depends on
+
+Each service is a separate account. Three (rows 13–15) are not configured in production yet; skip them unless you want to enable them.
+
+| # | Service | What it's used for | Current location / identifier | Required? | Notes |
+|---|---------|--------------------|-------------------------------|-----------|-------|
+| 1 | **GitHub repository** | Source code, PRs | `github.com/agsdev-code/agsone`, owned by agsdev (GitHub user `agsdev-code`). Still **public**. | Yes | Make it **private** (Settings → General → Danger Zone); it's an internal HR tool. If Vercel stops deploying, reconnect Git under Vercel Project → Settings → Git. |
+| 2 | **Vercel project** | Hosting, builds, env vars, preview deployments | Team **AGS** (`agsone`) → project **`agsone`**, region `syd1` | Yes | Billing for the team belongs to the agsdev account. |
+| 3 | **Domain `agsone.space`** | Production URL | Registered **through Vercel** inside the AGS team; expires **22 Aug 2027** | Yes | Moves with the Vercel team. Keep auto-renew on with a company card. |
+| 4 | Other domains in the AGS Vercel team | Not attached to this project | `agsone.com`, `agsone.com.ph`, `agsattendancehub.ph`, all at **third-party registrars** | Check | Find out which registrar account holds each one. |
+| 5 | **Supabase project** | Postgres database (all app data), file storage bucket `policy-docs` (HR policy PDFs), Realtime broadcast | Org **AGS Dev** → **AGS One** (`qtugwwotqnznpnttzvhl`), `ap-southeast-2` (Sydney). Pooler host `aws-0-ap-southeast-2.pooler.supabase.com`: port 6543 for the app, 5432 for migrations. | Yes | This is the **only** database; dev and production share it. Old project `fqmrnvjjkotusiymrqum` (org **AGS**) is to be deleted after cutover. The same org also contains an unrelated project, *AGS Break Tracker*. |
+| 6 | **Firebase project** (Google Cloud) | Authentication (Google sign-in), Admin SDK service account for verifying ID tokens | Project ID **`ags-one-82a7b`** | Yes | Owned by agsdev. Also check that the GCP billing account, if one is linked, belongs to the company. |
 | 7 | **Cloudinary** | Image/video uploads (avatars, feed media, reward art, food photos, org-chart photos, document previews) | Cloud name **`dfrmh2iee`**, folder `ags-one/` | Yes | Settings → Users → invite the new owner as *Master admin*, or change the account's login email. |
 | 8 | **Groq** | LLM for the "Ally" HR policy assistant (`app/api/assistant/chat`) | API key in `GROQ_API_KEY` | Yes (assistant breaks without it) | Create a key under the new owner's Groq account and swap the env var. |
 | 9 | **GIPHY** | GIF search in feed comments (browser-side calls) | Public key in `NEXT_PUBLIC_GIPHY_API_KEY` | Yes (GIF picker breaks without it) | Create an app under the new owner's GIPHY developer account and swap the key. |
@@ -36,26 +68,25 @@ The app depends on the services below. Each one is a separate account that needs
 | 14 | Upstash Redis | Distributed rate limiting (`lib/guardrails/rateLimiter.ts`) | `UPSTASH_REDIS_REST_URL/TOKEN`, **not set in production** | Optional | Falls back to per-instance in-memory limits. Create a database under the new owner's account to enable it. |
 | 15 | Sentry | Error and trace reporting (`instrumentation*.ts`, `next.config.ts`) | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN`, **not set** | Optional | Inert until a DSN is set. Create a project under the new owner's account if wanted. |
 
-> **Unrelated projects in the same Vercel team:** `agstardinesstracker` (agsattendancehub.vercel.app), `ags-performance-hub`, and `legacy-agent-activity` are separate apps that live in the same *AGS* Vercel team. They are **not** part of this repo, but transferring the team transfers them too.
+> **Unrelated projects in the same Vercel team:** `agstardinesstracker` (agsattendancehub.vercel.app) and `ags-performance-hub` are separate apps in the same *AGS* Vercel team. They are **not** part of this repo.
 
-### 1.2 Recommended transfer order (zero downtime)
+**Post-cutover checks.** After changing env vars and redeploying, verify production:
 
-1. **Add before you remove.** Add the new owner as an admin/owner on every service in 1.1 while the current owner still has access.
-2. **Transfer the GitHub repo**, then reconnect Git in Vercel (Project `employegames` → Settings → Git). Push a trivial PR to confirm a preview deployment builds.
-3. **Move the email sender** to a shared mailbox and update the `EMAIL_*` variables in Vercel.
-4. **Rotate secrets** (see 1.3) and update them in Vercel for **both Production and Preview**, then redeploy.
-5. **Update hardcoded personal values** (see 1.5) in a PR.
-6. Verify production: sign in, award points, upload an image, post with a GIF, ask Ally a question, check that an email arrives.
-7. **Remove the previous owner** from Vercel, Supabase, Firebase/GCP, Cloudinary, Groq, GIPHY, and GitHub.
+- sign in
+- award points
+- upload an image
+- post with a GIF
+- ask Ally a question (this tests the database and the `policy-docs` storage)
+- open a document under Documents
+- check that an email arrives
+- check that the notification bell updates without a page reload (Realtime)
 
 ### 1.3 Secrets to rotate after handover
 
-The previous owner has had these values locally (in `.env.local`, and in local tooling config like `.mcp.json`), so rotate them once the new owner is in control:
+The previous developer had these values locally (in `.env.local`, and in local tooling config like `.mcp.json`), so rotate them now that agsdev is in control. The **Supabase** credentials don't need rotating: the new project `qtugwwotqnznpnttzvhl` was created with a fresh database password and fresh API keys, and the old project's credentials stop mattering once it's deleted (1.1).
 
 | Secret | Where to rotate | Then update |
 |--------|-----------------|-------------|
-| Supabase **database password** | Supabase → Project Settings → Database → *Reset database password* | `DATABASE_URL`, `DIRECT_URL` |
-| Supabase **service role key** (and anon key) | Supabase → Project Settings → API → *JWT keys / API keys*. Rotating the JWT secret regenerates both. | `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
 | Firebase **Admin service account key** | GCP → IAM → Service accounts → `firebase-adminsdk-…` → Keys → add new key, delete old | `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` |
 | Cloudinary API secret | Cloudinary → Settings → API Keys → generate new, revoke old | `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` |
 | Groq API key | Groq console → API Keys | `GROQ_API_KEY` |
@@ -63,11 +94,11 @@ The previous owner has had these values locally (in `.env.local`, and in local t
 | Gmail App Password | Google Account → Security → App passwords (on the new mailbox) | `EMAIL_PASS` |
 | `CRON_SECRET`, `BOOTSTRAP_SECRET` | Any random string (`openssl rand -hex 32`) | Vercel env vars |
 
-Do **not** rotate the VAPID keys (see 1.1 #11). The Firebase web API key (`NEXT_PUBLIC_FIREBASE_*`) is public by design and doesn't need rotating.
+Do **not** rotate the VAPID keys (see 1.2 #11). The Firebase web API key (`NEXT_PUBLIC_FIREBASE_*`) is public by design and doesn't need rotating.
 
 ### 1.4 Environment variables (complete list)
 
-Production values live in **Vercel → `employegames` → Settings → Environment Variables** (Production + Preview). Locally they go in `.env.local`, which is gitignored. Prisma CLI commands also read `.env` (it only needs `DATABASE_URL` and `DIRECT_URL`). To pull the current values: `vercel link --project employegames --scope agsone && vercel env pull .env.local`.
+Production values live in **Vercel → `agsone` → Settings → Environment Variables** (Production + Preview). Locally they go in `.env.local`, which is gitignored. Prisma CLI commands also read `.env` (it only needs `DATABASE_URL` and `DIRECT_URL`). To pull the current values: `vercel link --project agsone --scope agsone && vercel env pull .env.local`.
 
 | Variable | Status | Used by | Notes |
 |----------|--------|---------|-------|
@@ -197,6 +228,31 @@ npx tsx scripts/sync-arcade-badges.ts   # upsert Solo Arcade badge definitions
 - One-off SQL in `scripts/*.sql` (`setup-rag.sql`, `add-indexes.sql`, …) was run manually in the Supabase SQL editor. Only re-run these when rebuilding a database from scratch.
 
 **Rebuilding from an empty database:** `npx prisma migrate deploy` → run `scripts/setup-rag.sql` in Supabase → `npx tsx prisma/seed.ts` → `npx tsx scripts/sync-arcade-badges.ts` → create the `policy-docs` storage bucket in Supabase → bootstrap the first HR admin (2.6).
+
+**Copying to a new Supabase project** (how the 2026-10-14 move to agsdev was done; reuse it for any future move). Requires the Supabase CLI and Docker. Take the app offline first so no writes are lost.
+
+```bash
+# 1. Dump from the old project (CLI logged in as the old owner, linked to the old ref)
+supabase db dump --linked -f roles.sql --role-only
+supabase db dump --linked -f schema.sql
+supabase db dump --linked -f data.sql --use-copy --data-only
+supabase storage cp -r ss:///policy-docs ./storage --experimental --linked
+
+# 2. Create the new project (CLI logged in as the new owner), same region as Vercel
+supabase projects create "AGS One" --org-id <org-id> --region ap-southeast-2 --db-password <pw>
+
+# 3. Remove COPY blocks for empty tables from data.sql. Internal Supabase tables such as
+#    storage.buckets_vectors reject inserts and abort the restore.
+# 4. Restore in one transaction, with triggers off so circular foreign keys load cleanly
+psql --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql \
+  -c 'SET session_replication_role = replica' -f data.sql \
+  --dbname "postgresql://postgres.<new-ref>:<pw>@<pooler-host>:5432/postgres"
+```
+
+5. **Upload the storage files.** The restore already created the `storage.objects` metadata rows, so a plain upload fails with `409 Duplicate`. Upload each file to `policy-docs/<file name>` through the Storage API with the header `x-upsert: true`. Don't use `storage cp -r` into the bucket root: it nests the files under an extra `policy-docs/` folder.
+6. **Verify.** Compare per-table row counts with the dump, and call `match_document_chunks('leave policy', 8)` to confirm Ally's search works. Then swap the five Supabase env vars in Vercel (1.1).
+
+Nothing in code needs to change when the Supabase project changes: the CSP and image config in `next.config.ts` allow any `*.supabase.co` host.
 
 ### 2.5 Deployment
 
