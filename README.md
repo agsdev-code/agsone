@@ -103,7 +103,11 @@ Do **not** rotate the VAPID keys (see 1.2 #11). The Firebase web API key (`NEXT_
 
 ### 1.4 Environment variables (complete list)
 
-Production values live in **Vercel → `agsone` → Settings → Environment Variables** (Production + Preview). Locally they go in `.env.local`, which is gitignored. Prisma CLI commands also read `.env` (it only needs `DATABASE_URL` and `DIRECT_URL`). To pull the current values: `vercel link --project agsone --scope agsone && vercel env pull .env.local`.
+Values live in **Vercel → `agsone` → Settings → Environment Variables**.
+- **Production and Preview** hold the deployed values. Secrets are stored as the *Secret* type, which can't be read back.
+- **Development** holds a complete working local set: the same services, with `NEXT_PUBLIC_APP_URL=http://localhost:3010`.
+
+To set up locally, run `vercel link --project agsone --scope agsone && vercel env pull .env.local`, then copy `DATABASE_URL` and `DIRECT_URL` into `.env`, which Prisma CLI commands read. Both files are gitignored. Development leaves out the unused variables listed below, and `UPSTASH_*`, which is optional and falls back to in-memory limits.
 
 | Variable | Status | Used by | Notes |
 |----------|--------|---------|-------|
