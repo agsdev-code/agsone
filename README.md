@@ -54,7 +54,8 @@ To sign in to **GitHub, Vercel, Supabase, and Firebase**, use `agsdev@alliancegl
 - [ ] **Pause, then delete, the old Supabase project** `fqmrnvjjkotusiymrqum` (old org **AGS**). Until it's deleted it still holds a full copy of employee data. *(previous developer)*
 - [ ] **Delete the old Cloudinary account** (cloud `dfrmh2iee`) after about a week. Every asset is already in `cdnl9dwe`. *(previous developer)*
 - [ ] **Revoke the previous developer's old credentials:** the Gmail App Password on `d.reyes@`, the GIPHY key `PXLe…PbVy`, and the Groq key `gsk_Wnro…` *(previous developer)*
-- [ ] **Remove the previous developer's access:** GitHub collaborators `Ditherys` and `dreyes-netizen`, Vercel team member `reyesditherb-9328`, and `d.reyes@` in Firebase/GCP IAM. First confirm `agsdev@` is **Owner** in IAM.
+- [x] Previous developer removed from GitHub (`Ditherys`, `dreyes-netizen`) and the Vercel team (`reyesditherb-9328`)
+- [ ] **Remove `d.reyes@` from Firebase/GCP IAM** on `ags-one-82a7b`. First confirm `agsdev@` is **Owner**.
 - [ ] **Review other access:** GitHub collaborator `vtion001` (write) and Vercel viewer `patrick@allianceglobalsolutions.com`
 - [ ] Apply for a GIPHY **production** key. The current key is a rate-limited beta key.
 - [ ] Update the hardcoded values in 1.5 if HR contacts change
