@@ -40,7 +40,7 @@ export async function* generateChatReplyStream(
   const stream = await groq.chat.completions.create(
     {
       messages,
-      model: "llama-3.1-8b-instant",
+      model: "openai/gpt-oss-20b",
       stream: true,
     },
     { signal },
