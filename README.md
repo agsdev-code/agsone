@@ -30,6 +30,7 @@ To sign in to **GitHub, Vercel, Supabase, and Firebase**, use `agsdev@alliancegl
 | Vercel | Team **AGS** (`agsone`) → project **`agsone`** (renamed from `employegames`) | agsdev |
 | Supabase | Org **AGS Dev** → project **AGS One**, ref `qtugwwotqnznpnttzvhl`, region `ap-southeast-2` | agsdev |
 | Firebase / GCP | Project **`ags-one-82a7b`** | agsdev |
+| Cloudinary | Cloud **`cdnl9dwe`** (agsdev's own Cloudinary account; AGS One assets were moved in from the old cloud `dfrmh2iee`) | agsdev |
 
 ### 1.1 Handover status (2026-10-14)
 
@@ -40,7 +41,11 @@ To sign in to **GitHub, Vercel, Supabase, and Firebase**, use `agsdev@alliancegl
 - [x] Vercel env vars `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` now point to `qtugwwotqnznpnttzvhl` (Production and Preview). The two `NEXT_PUBLIC_` values are stored as *Config*, because Vercel won't store browser-exposed values as *Secret*.
 - [ ] **Resume the Vercel project** (it is paused, and the site returns `503 DEPLOYMENT_PAUSED`). Before letting users in, check that the newest production deployment is **Ready** and is the one serving `agsone.space`. Older deployments were built with the **old** database values. Then run the checks in 1.2.
 - [ ] Once the checks pass, **pause** the old Supabase project `fqmrnvjjkotusiymrqum` (old org **AGS**) so nothing can still write to it. **Delete** it after a week; until then it still holds a full copy of employee data.
-- [ ] Confirm the agsdev account owns or has admin on **Cloudinary, Groq, GIPHY**, and the **email sender mailbox** (rows 7–10 below)
+- [x] Cloudinary **moved** into agsdev's existing cloud `cdnl9dwe` (see 2.4, "Moving to a different Cloudinary cloud"). All 349 assets were copied byte-for-byte with the same `public_id`s. The 218 database rows holding URLs were rewritten, and the three `*CLOUDINARY*` env vars were swapped in Vercel (Production and Preview). PDF/ZIP delivery is enabled on the new cloud, which the HR document needs.
+- [ ] **Redeploy production** when resuming the Vercel project. `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` is baked in at build time, so a build made before the swap would still sign uploads for the old cloud.
+- [ ] Generate a fresh Cloudinary API key for AGS One, set `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` in Vercel, then delete the key used for the migration. That key was shared in a chat session.
+- [ ] After a week, delete the old Cloudinary account (cloud `dfrmh2iee`)
+- [ ] Confirm the agsdev account owns or has admin on **Groq, GIPHY**, and the **email sender mailbox** (rows 8–10 below)
 - [ ] Rotate the secrets in 1.3
 - [ ] Make the GitHub repo **private** (it is still public)
 - [ ] Update the hardcoded values in 1.5 if HR contacts change
@@ -58,7 +63,7 @@ Each service is a separate account. Three (rows 13–15) are not configured in p
 | 4 | Other domains in the AGS Vercel team | Not attached to this project | `agsone.com`, `agsone.com.ph`, `agsattendancehub.ph`, all at **third-party registrars** | Check | Find out which registrar account holds each one. |
 | 5 | **Supabase project** | Postgres database (all app data), file storage bucket `policy-docs` (HR policy PDFs), Realtime broadcast | Org **AGS Dev** → **AGS One** (`qtugwwotqnznpnttzvhl`), `ap-southeast-2` (Sydney). Pooler host `aws-0-ap-southeast-2.pooler.supabase.com`: port 6543 for the app, 5432 for migrations. | Yes | This is the **only** database; dev and production share it. Old project `fqmrnvjjkotusiymrqum` (org **AGS**) is to be deleted after cutover. The same org also contains an unrelated project, *AGS Break Tracker*. |
 | 6 | **Firebase project** (Google Cloud) | Authentication (Google sign-in), Admin SDK service account for verifying ID tokens | Project ID **`ags-one-82a7b`** | Yes | Owned by agsdev. Also check that the GCP billing account, if one is linked, belongs to the company. |
-| 7 | **Cloudinary** | Image/video uploads (avatars, feed media, reward art, food photos, org-chart photos, document previews) | Cloud name **`dfrmh2iee`**, folder `ags-one/` | Yes | Settings → Users → invite the new owner as *Master admin*, or change the account's login email. |
+| 7 | **Cloudinary** | Image/video uploads (avatars, feed media, reward art, food photos, org-chart photos, document previews) | Cloud name **`cdnl9dwe`** in agsdev's account (shared with Cloudinary's sample assets) | Yes | The database stores **full delivery URLs** that include the cloud name, so changing clouds means copying assets and rewriting URLs (see 2.4). *Settings → Security → Allow delivery of PDF and ZIP files* must stay enabled. |
 | 8 | **Groq** | LLM for the "Ally" HR policy assistant (`app/api/assistant/chat`) | API key in `GROQ_API_KEY` | Yes (assistant breaks without it) | Create a key under the new owner's Groq account and swap the env var. |
 | 9 | **GIPHY** | GIF search in feed comments (browser-side calls) | Public key in `NEXT_PUBLIC_GIPHY_API_KEY` | Yes (GIF picker breaks without it) | Create an app under the new owner's GIPHY developer account and swap the key. |
 | 10 | **Gmail SMTP mailbox** | Outbound notification emails (`lib/email/mailer.ts`) | Sends via `smtp.gmail.com:587` as a **personal** `@allianceglobalsolutions.com` mailbox using an App Password | Yes (emails silently stop without it) | Move to a shared/service mailbox (e.g. `noreply@` or `agsone@`). Generate an App Password on it, then update `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`. |
@@ -116,7 +121,7 @@ Production values live in **Vercel → `agsone` → Settings → Environment Var
 | `FIREBASE_PROJECT_ID` | **Required** | `lib/firebase/admin.ts` | |
 | `FIREBASE_CLIENT_EMAIL` | **Required** | 〃 | Service-account email |
 | `FIREBASE_PRIVATE_KEY` | **Required** | 〃 | Service-account private key; `\n` escapes are converted at runtime |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | **Required** | `lib/cloudinary/*`, image URLs | `dfrmh2iee` |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | **Required** | `lib/cloudinary/*`, image URLs | `cdnl9dwe`. Inlined at build time, so redeploy after changing it. |
 | `CLOUDINARY_API_KEY` | **Required** | Server-side signed uploads/deletes | |
 | `CLOUDINARY_API_SECRET` | **Required** | 〃 | **Secret** |
 | `GROQ_API_KEY` | **Required** | `lib/groq/client.ts` (Ally assistant) | |
@@ -253,6 +258,25 @@ psql --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql \
 6. **Verify.** Compare per-table row counts with the dump, and call `match_document_chunks('leave policy', 8)` to confirm Ally's search works. Then swap the five Supabase env vars in Vercel (1.1).
 
 Nothing in code needs to change when the Supabase project changes: the CSP and image config in `next.config.ts` allow any `*.supabase.co` host.
+
+**Moving to a different Cloudinary cloud** (done 2026-10-14, `dfrmh2iee` → `cdnl9dwe`). Uploads store the full `secure_url`, cloud name included, in the database. Org-chart overrides store only `User.orgChartPhotoPublicId`, and their URL is built from the env var at render time.
+
+1. List every asset on the old cloud with the Admin API (`resources/image|video|raw`).
+2. Upload each one to the new cloud by URL, with the same `public_id`, `overwrite=false`, and the same `resource_type`. Copy every asset, not just referenced ones.
+3. In one transaction, `replace()` `res.cloudinary.com/<old>/` with `res.cloudinary.com/<new>/` in these columns:
+   - `FoodListing.imageUrls`
+   - `SocialPost.imageUrls`
+   - `SocialPost.videoUrl`
+   - `Reward.imageUrls`
+   - `MedicineItem.imageUrl`
+   - `HrDocument.fileUrl`
+   - `AuditLog.beforeState`
+4. Swap `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in Vercel, then redeploy.
+
+Notes:
+- The `/v<version>/` segment and the transforms baked into stored URLs keep working on the new cloud.
+- New Cloudinary accounts block PDF delivery (`401`) until *Allow delivery of PDF and ZIP files* is enabled.
+- Avatars are Google profile photos, not Cloudinary, so they're unaffected.
 
 ### 2.5 Deployment
 
